@@ -51,13 +51,3 @@ MITRE ATT&CK is a globally accessible knowledge base of adversary tactics and te
 - Mapping alerts to tactics and techniques boosts your investigation confidence.
 
 ---
-
-## ✅ Next Step
-
-- Save this file as `MITRE_TTP_Basics_ApurvaTiwari.md`
-- Push it to:
-  ```
-  CyberSec-Portfolio/
-  └── MITRE-TTPs/
-      └── MITRE_TTP_Basics_ApurvaTiwari.md
-  ```
