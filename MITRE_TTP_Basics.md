@@ -1,5 +1,5 @@
 
-# MITRE ATT&CK Basics – Apurva Tiwari
+# MITRE ATT&CK Basics
 
 ## 🎯 Objective
 Understand the structure and purpose of the MITRE ATT&CK framework, including Tactics, Techniques, and Procedures (TTPs), and document real-world examples.
