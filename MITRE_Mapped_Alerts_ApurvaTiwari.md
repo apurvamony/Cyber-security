@@ -1,4 +1,4 @@
-# 🛡️ MITRE-Mapped Alert Reports – Apurva Tiwari
+# 🛡️ MITRE-Mapped Alert Reports
 
 ---
 
