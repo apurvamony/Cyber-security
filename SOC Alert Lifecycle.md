@@ -1,4 +1,4 @@
-# SOC Alert Lifecycle – Apurva Tiwari
+# SOC Alert Lifecycle
 
 ## 📌 Alert Lifecycle Diagram (Text-based)
 
