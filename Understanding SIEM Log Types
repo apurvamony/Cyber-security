@@ -1,0 +1,190 @@
+# 📘 Day 3: MITRE Mapping to Alerts — SOC Use Cases
+
+This document maps 8 real-world SOC alerts to MITRE ATT&CK Tactics & Techniques, using Microsoft Sentinel-style KQL and structured incident documentation.
+
+---
+
+## 🧠 Summary Table
+
+| Use Case | Tactic             | Technique               | MITRE ID | Log Source           |
+|----------|--------------------|--------------------------|----------|----------------------|
+| 1        | Initial Access     | Spearphishing Attachment | T1566.001| Email Gateway        |
+| 2        | Execution          | PowerShell               | T1059.001| Windows Event Logs   |
+| 3        | Persistence        | Scheduled Task           | T1053.005| Windows Task Logs    |
+| 4        | Privilege Escalation | Exploitation for Privilege Escalation | T1068 | Security Events     |
+| 5        | Defense Evasion    | Obfuscated Files/Scripts | T1027    | Sysmon Logs          |
+| 6        | Credential Access  | Brute Force              | T1110    | Azure AD Sign-ins    |
+| 7        | Lateral Movement   | SMB/Windows Admin Shares | T1021.002| Sysmon Logs          |
+| 8        | Exfiltration       | Exfiltration Over Web    | T1041    | Firewall/Web Proxy   |
+
+---
+
+## 🔍 Use Case 1: Phishing Email (T1566.001)
+
+**Tactic:** Initial Access  
+**Technique:** Spearphishing Attachment  
+**MITRE ID:** T1566.001
+
+**Log Source:** Email Gateway (e.g., Microsoft Defender for Office 365)
+
+**Detection Logic (KQL):**
+```kql
+EmailEvents
+| where Subject has_any ("Invoice", "Payment", "Urgent")
+| where SenderFromDomainType == "External"
+| where Attachments has ".exe" or Attachments has ".iso"
+| project Timestamp, SenderFromAddress, RecipientEmailAddress, Subject, Attachments
+```
+
+**Analyst Notes:**
+- Investigate attachment hash in VirusTotal
+- Check if user opened the file and any post-click network behavior
+
+---
+
+## 🛠️ Use Case 2: PowerShell Execution (T1059.001)
+
+**Tactic:** Execution  
+**Technique:** PowerShell  
+**MITRE ID:** T1059.001
+
+**Log Source:** Windows Security Logs / Sysmon
+
+**Detection Logic (KQL):**
+```kql
+DeviceProcessEvents
+| where FileName =~ "powershell.exe"
+| where ProcessCommandLine has_any ("EncodedCommand", "IEX", "Invoke-WebRequest")
+| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine
+```
+
+**Analyst Notes:**
+- Look for base64-encoded commands
+- Cross-reference IPs or URLs with threat intel feeds
+
+---
+
+## 🕒 Use Case 3: Scheduled Task for Persistence (T1053.005)
+
+**Tactic:** Persistence  
+**Technique:** Scheduled Task/Job  
+**MITRE ID:** T1053.005
+
+**Log Source:** Windows Task Scheduler logs
+
+**Detection Logic (KQL):**
+```kql
+DeviceProcessEvents
+| where InitiatingProcessFileName =~ "schtasks.exe"
+| where ProcessCommandLine has "/create"
+| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine
+```
+
+**Analyst Notes:**
+- Scheduled tasks with suspicious names or executing from unusual paths are red flags
+
+---
+
+## 🔐 Use Case 4: Privilege Escalation via Exploitation (T1068)
+
+**Tactic:** Privilege Escalation  
+**Technique:** Exploitation for Privilege Escalation  
+**MITRE ID:** T1068
+
+**Log Source:** Security Event Logs / Sysmon
+
+**Detection Logic (KQL):**
+```kql
+DeviceProcessEvents
+| where FileName has "exploit"
+| where ProcessCommandLine has "CVE"
+| project Timestamp, DeviceName, ProcessCommandLine, InitiatingProcessAccountName
+```
+
+**Analyst Notes:**
+- Look for child processes that escalate privileges (e.g., spawning SYSTEM shell)
+
+---
+
+## 🧱 Use Case 5: Obfuscated Script (T1027)
+
+**Tactic:** Defense Evasion  
+**Technique:** Obfuscated Files or Information  
+**MITRE ID:** T1027
+
+**Log Source:** Sysmon Logs
+
+**Detection Logic (KQL):**
+```kql
+DeviceProcessEvents
+| where ProcessCommandLine has_any ("frombase64string", "invoke-expression", "iex")
+| where FileName endswith ".ps1"
+| project Timestamp, DeviceName, FileName, ProcessCommandLine
+```
+
+**Analyst Notes:**
+- Obfuscation often seen in initial compromise or malware loaders
+
+---
+
+## 🔑 Use Case 6: Brute Force on Azure AD (T1110)
+
+**Tactic:** Credential Access  
+**Technique:** Brute Force  
+**MITRE ID:** T1110
+
+**Log Source:** Azure AD Sign-in Logs
+
+**Detection Logic (KQL):**
+```kql
+SigninLogs
+| summarize FailedAttempts = count() by UserPrincipalName, IPAddress
+| where FailedAttempts > 10
+| project UserPrincipalName, IPAddress, FailedAttempts
+```
+
+**Analyst Notes:**
+- Correlate with geolocation and impossible travel events
+
+---
+
+## 🌐 Use Case 7: Lateral Movement via SMB (T1021.002)
+
+**Tactic:** Lateral Movement  
+**Technique:** SMB/Windows Admin Shares  
+**MITRE ID:** T1021.002
+
+**Log Source:** Sysmon / Windows Logs
+
+**Detection Logic (KQL):**
+```kql
+DeviceNetworkEvents
+| where RemotePort == 445
+| where InitiatingProcessFileName in~ ("wmic.exe", "psexec.exe", "cmd.exe")
+| project Timestamp, DeviceName, RemoteIP, InitiatingProcessFileName
+```
+
+**Analyst Notes:**
+- Check process ancestry and unusual timing/activity for movement across hosts
+
+---
+
+## ☁️ Use Case 8: Data Exfiltration via Web (T1041)
+
+**Tactic:** Exfiltration  
+**Technique:** Exfiltration Over Web Service  
+**MITRE ID:** T1041
+
+**Log Source:** Firewall / Web Proxy Logs
+
+**Detection Logic (KQL):**
+```kql
+DeviceNetworkEvents
+| where InitiatingProcessFileName =~ "powershell.exe"
+| where RemoteUrl contains ".php" or RemoteUrl contains ".asp"
+| project Timestamp, DeviceName, InitiatingProcessAccountName, RemoteUrl
+```
+
+
+**Analyst Notes:**
+- Use deep packet inspection or proxy logs to validate payload size or nature
